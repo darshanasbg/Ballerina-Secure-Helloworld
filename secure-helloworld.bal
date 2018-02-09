@@ -1,25 +1,23 @@
 import ballerina.net.http;
-import ballerina.log;
-import authentication;
+import authentication.basic;
+import context;
+import authorization;
 
 service<http> helloWorld {
 
     resource sayHello (http:Request req, http:Response res) {
 
+        basic:BasicAuthenticator authenticator = basic:createBasicAuthenticator();
         boolean isAuthenticated;
-        error authError;
-        isAuthenticated, authError = authentication:interceptRequest(req);
-        if (authError != null) {
-            log:printErrorCause("Error while authenticating: ", authError);
-            res.setStringPayload(authError.msg);
+        context:SecurityContext secContext;
+        isAuthenticated, secContext = authenticator.authenticate(req);
+        authorization:AuthorizationChecker authzChecker = authorization:createAuthorizationCheker();
+        if (!isAuthenticated) {
+            res.setStatusCode(401);
+        } else if (!authzChecker.checkAuthorization(secContext.username, "scope2", req.getRequestURL())) {
+            res.setStatusCode(403);
         } else {
-            if (!isAuthenticated) {
-                log:printError("user not authenticated");
-                res.statusCode = 401;
-                res.setStringPayload("401: Unauthenticated ");
-            } else {
-                res.setStringPayload("Hello, World! ");
-            }
+            res.setStringPayload("Hello World!! \n");
         }
         _ = res.send();
     }

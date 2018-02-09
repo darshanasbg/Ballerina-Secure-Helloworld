@@ -3,40 +3,34 @@ package authentication.userstore;
 import ballerina.config;
 import ballerina.log;
 
-public struct FileBasedUserstore {
-    string userstoreType;
-    string url;
-    map userstoreProperties;
+const string USERSTORE_PASSWORD_ENTRY = "password";
+const string USERSTORE_GROUPS_ENTRY = "groups";
+const string USERSTORE_USERIDS_ENTRY = "userids";
+
+public function readPasswordHash (string username) (string) {
+    // first read the user id from user->id mapping
+    string userid = readUserId(username);
+    if (userid == null) {
+        // TODO: make debug
+        log:printInfo("No userid found for user: " + username);
+        return null;
+    }
+    // read the hashed password from the userstore file, using the user id
+    return config:getInstanceValue(userid, USERSTORE_PASSWORD_ENTRY);
 }
 
-FileBasedUserstore fileBasedUserStore;
-string userstoreFile = "ballerina.conf";
-
-public function createFileBasedUserstore (string userstoreType, map properties) (FileBasedUserstore) {
-    if (fileBasedUserStore != null) {
-        return fileBasedUserStore;
+public function readGroups (string username) (string) {
+    // first read the user id from user->id mapping
+    string userid = readUserId(username);
+    if (userid == null) {
+        // TODO: make debug
+        log:printInfo("No userid found for user: " + username);
+        return null;
     }
-    // TODO: fix hardcoded config file name
-    fileBasedUserStore = {userstoreType:userstoreType, url:userstoreFile, userstoreProperties:properties};
-    log:printInfo("Userstore initialized, type:" + fileBasedUserStore.userstoreType + ", url: "
-                  + fileBasedUserStore.url);
-    return fileBasedUserStore;
+    // reads the groups for the userid
+    return config:getInstanceValue(userid, USERSTORE_GROUPS_ENTRY);
 }
 
-public function <FileBasedUserstore userstore> authenticateUser (string username, string password) (boolean) {
-    string passwordHash = userstore.readUserCredentials(username);
-    if (passwordHash == null) {
-        log:printInfo("No credentials found for user: " + username);
-        return false;
-    }
-    //TODO: hash the password from the runtime and compare with the hash stored in userstore.
-    //TODO: currently stored in plaintext, change to hash value
-    if (password == passwordHash) {
-        return true;
-    }
-    return false;
-}
-
-function <FileBasedUserstore userstore> readUserCredentials (string username) (string) {
-    return config:getInstanceValue(username, "password");
+function readUserId (string username) (string) {
+    return config:getInstanceValue(USERSTORE_USERIDS_ENTRY, username);
 }
