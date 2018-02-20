@@ -1,24 +1,20 @@
 import ballerina.net.http;
-import authentication.basic;
-import context;
-import authorization;
+import ballerina.security.authentication.basic;
+import ballerina.security.authorization;
 
 service<http> helloWorld {
 
-    resource sayHello (http:Request req, http:Response res) {
+    resource sayHello (http:Connection conn, http:InRequest req) {
 
-        basic:BasicAuthenticator authenticator = basic:createAuthenticator();
-        boolean isAuthenticated;
-        context:SecurityContext secContext;
-        isAuthenticated, secContext = authenticator.authenticate(req);
-        authorization:AuthorizationChecker authzChecker = authorization:createChecker();
-        if (!isAuthenticated) {
-            res.setStatusCode(401);
-        } else if (!authzChecker.check(secContext.username, "scope2", req.getRequestURL())) {
-            res.setStatusCode(403);
+        http:OutResponse res = {};
+        if(!basic:handle(req)) {
+            res = {statusCode:401, reasonPhrase:"Unauthenticated"};
+            // currently, need to pass the scope and the resource name to the method call for the authorization
+        } else if (!authorization:handle(req, "scope2", "/sayHello")) {
+            res = {statusCode:403, reasonPhrase:"Unauthorized"};
         } else {
-            res.setStringPayload("Hello World!! \n");
+            res.setStringPayload("Hello, World!!");
         }
-        _ = res.send();
+        _ = conn.respond(res);
     }
 }
