@@ -10,20 +10,21 @@ and a user who needs to access the particular resource should have the relevant 
 4. See the sample below on how to engage authentication and authorization in your service:
    ```
    service<http> helloWorld {
-   
-       resource sayHello (http:Connection conn, http:InRequest req) {
-   
-           http:OutResponse res = {};
-           if(!basic:handle(req)) {
-               res = {statusCode:401, reasonPhrase:"Unauthenticated"};
-               // currently, need to pass the scope and the resource name to the method call for the authorization
-           } else if (!authorization:handle(req, "scope2", "/sayHello")) {
-               res = {statusCode:403, reasonPhrase:"Unauthorized"};
-           } else {
+
+      resource sayHello (http:Connection conn, http:InRequest req) {
+
+         http:OutResponse res = {};
+         basic:HttpBasicAuthInterceptor authnInterceptor = {};
+         authz:HttpAuthzInterceptor authzInterceptor = {};
+         if (!authnInterceptor.handle(req)) {
+             res = {statusCode:401, reasonPhrase:"Unauthenticated"};
+         } else if (!authzInterceptor.handle(req, "scope2", "/sayHello")) {
+             res = {statusCode:403, reasonPhrase:"Unauthorized"};
+         } else {
                res.setStringPayload("Hello, World!!");
-           }
-           _ = conn.respond(res);
-       }
+         }
+          _ = conn.respond(res);
+      }
    }
    ```
 5. Start the service with the following command:
