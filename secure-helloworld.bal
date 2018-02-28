@@ -7,11 +7,11 @@ service<http> helloWorld {
     resource sayHello (http:Connection conn, http:InRequest req) {
 
         http:OutResponse res = {};
-        basic:HttpBasicAuthInterceptor authnInterceptor = {};
-        authz:HttpAuthzInterceptor authzInterceptor = {};
-        if (!authnInterceptor.handle(req)) {
+        basic:HttpBasicAuthnHandler authnHandler = {};
+        authz:HttpAuthzHandler authzHandler = {};
+        if (!authnHandler.handle(req)) {
             res = {statusCode:401, reasonPhrase:"Unauthenticated"};
-        } else if (!authzInterceptor.handle(req, "scope2", "/sayHello")) {
+        } else if (!authzHandler.handle(req, "scope2", "/sayHello")) {
             res = {statusCode:403, reasonPhrase:"Unauthorized"};
         } else {
             res.setStringPayload("Hello, World!!");
