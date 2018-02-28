@@ -11,20 +11,20 @@ and a user who needs to access the particular resource should have the relevant 
    ```
    service<http> helloWorld {
 
-      resource sayHello (http:Connection conn, http:InRequest req) {
+       resource sayHello (http:Connection conn, http:InRequest req) {
 
-         http:OutResponse res = {};
-         basic:HttpBasicAuthInterceptor authnInterceptor = {};
-         authz:HttpAuthzInterceptor authzInterceptor = {};
-         if (!authnInterceptor.handle(req)) {
-             res = {statusCode:401, reasonPhrase:"Unauthenticated"};
-         } else if (!authzInterceptor.handle(req, "scope2", "/sayHello")) {
-             res = {statusCode:403, reasonPhrase:"Unauthorized"};
-         } else {
+           http:OutResponse res = {};
+           basic:HttpBasicAuthnHandler authnHandler = {};
+           authz:HttpAuthzHandler authzHandler = {};
+           if (!authnHandler.handle(req)) {
+               res = {statusCode:401, reasonPhrase:"Unauthenticated"};
+           } else if (!authzHandler.handle(req, "scope2", "/sayHello")) {
+               res = {statusCode:403, reasonPhrase:"Unauthorized"};
+           } else {
                res.setStringPayload("Hello, World!!");
-         }
-          _ = conn.respond(res);
-      }
+           }
+           _ = conn.respond(res);
+       }
    }
    ```
 5. Start the service with the following command:
