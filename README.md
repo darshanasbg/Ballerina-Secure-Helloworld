@@ -33,6 +33,6 @@ and a user who needs to access the particular resource should have the relevant 
    ```
 6. Invoke the service with the correct basic authenication header, relevant to your username and password:
    ```
-   curl -v -H "Authorization: Basic xxxxx" https://localhost:9096/helloWorld/sayHello
+   curl -vk -H "Authorization: Basic xxxxx" https://localhost:9096/helloWorld/sayHello
    ```   
 ##### Note: Please see the ballerina.conf file included for the format of the userstore and other configurations.
