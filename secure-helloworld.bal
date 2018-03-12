@@ -1,7 +1,14 @@
 import ballerina.net.http;
-import ballerina.auth.basic;
 import ballerina.auth.authz;
+import ballerina.auth.basic;
 
+@http:configuration {
+    basePath:"/helloWorld",
+    httpsPort:9096,
+    keyStoreFile:"${ballerina.home}/bre/security/ballerinaKeystore.p12",
+    keyStorePassword:"ballerina",
+    certPassword:"ballerina"
+}
 service<http> helloWorld {
 
     resource sayHello (http:Connection conn, http:InRequest req) {
