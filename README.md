@@ -33,7 +33,8 @@ and a user who needs to access the particular resource should have the relevant 
            // authenticate
            if (!authnHandler.handle(req)) {
                res = {statusCode:401, reasonPhrase:"Unauthenticated"};
-	      // to access the resource 'sayHello', a user would need to be in groups which are mapped to 'scope2'
+	       // to access the resource 'sayHello', a user would need to be in groups
+	       // which are mapped to 'scope2'
            } else if (!authzHandler.handle(req, "scope2", "/sayHello")) {
                res = {statusCode:403, reasonPhrase:"Unauthorized"};
            } else {
