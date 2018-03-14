@@ -2,26 +2,13 @@ import ballerina.net.http;
 import ballerina.auth.authz;
 import ballerina.auth.basic;
 
-//public struct ServiceEndpointConfiguration {
-//    string host;
-//    int port;
-//    KeepAlive keepAlive;
-//    TransferEncoding transferEncoding;
-//    Chunking chunking;
-//    SslConfiguration ssl;
-//    string httpVersion;
-//}
-
-//http:SslConfiguration sslConfig = {
-//                                      keyStoreFile:"${ballerina.home}/bre/security/ballerinaKeystore.p12",
-//                                      keyStoreFile:"${ballerina.home}/bre/security/ballerinaKeystore.p12",
-//                                      keyStorePassword:"ballerina",
-//                                      certPassword:"ballerina"
-//                                  };
-//http:ServiceEndpointConfiguration serviceEpConfig = {port: 9096, ssl:sslConfig};
-
 endpoint<http:Service> backendEp {
-    port:9096
+    port:9096,
+    ssl:{
+        keyStoreFile:"${ballerina.home}/bre/security/ballerinaKeystore.p12",
+        keyStorePassword:"ballerina",
+        certPassword:"ballerina"
+    }
 }
 @http:serviceConfig {
     basePath:"/helloWorld",
@@ -33,27 +20,34 @@ service<http:Service> helloWorld {
         path:"/sayHello"
     }
     resource sayHello (http:ServerConnector conn, http:Request request) {
-        var httpClient = backendEp.getConnector();
         http:Response res = {};
-        res.setStringPayload("Hello, World!!");
-        _ = httpClient -> respond(res);
+        AuthStatus authStatus = checkAuth(request, "scope2", "/sayHello");
+        if(authStatus.success) {
+            res.setJsonPayload("Hello, World!!");
+        } else {
+            res = {statusCode:authStatus.statusCode, reasonPhrase:authStatus.message};
+        }
+        _ = conn -> respond(res);
     }
 }
 
-//service<http> helloWorld {
-//
-//    resource sayHello (http:Connection conn, http:Request req) {
-//
-//        http:Response res = {};
-//        basic:HttpBasicAuthnHandler authnHandler = {};
-//        authz:HttpAuthzHandler authzHandler = {};
-//        if (!authnHandler.handle(req)) {
-//            res = {statusCode:401, reasonPhrase:"Unauthenticated"};
-//        } else if (!authzHandler.handle(req, "scope2", "/sayHello")) {
-//            res = {statusCode:403, reasonPhrase:"Unauthorized"};
-//        } else {
-//            res.setStringPayload("Hello, World!!");
-//        }
-//        _ = conn.respond(res);
-//    }
-//}
+function checkAuth (http:Request request, string scopeName, string resourceName) (AuthStatus) {
+    basic:HttpBasicAuthnHandler authnHandler = {};
+    authz:HttpAuthzHandler authzHandler = {};
+    if (!authnHandler.handle(request)) {
+        AuthStatus authnStatus = {success:false, statusCode:401, message:"Unauthenticated"};
+        return authnStatus;
+    } else if (!authzHandler.handle(request, scopeName, resourceName)) {
+        AuthStatus authzStatus = {success:false, statusCode:403, message:"Unauthorized"};
+        return authzStatus;
+    } else {
+        AuthStatus authStatus = {success:true, statusCode:200, message:"Successful"};
+        return authStatus;
+    }
+}
+
+public struct AuthStatus {
+    boolean success;
+    int statusCode;
+    string message;
+}
