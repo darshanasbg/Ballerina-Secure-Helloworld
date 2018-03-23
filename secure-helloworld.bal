@@ -21,7 +21,6 @@ endpoint endpoints:ApiEndpoint ep {
 @http:ServiceConfig {
     basePath:"/hello"
 }
-
 @auth:Config {
     authentication:{enabled:true},
     scope:"xxx"
@@ -32,7 +31,6 @@ service<http:Service> echo bind ep {
         path:"/sayHello"
     }
     @auth:Config {
-        authentication:{enabled:false},
         scope:"scope2"
     }
     echo (endpoint client, http:Request req) {

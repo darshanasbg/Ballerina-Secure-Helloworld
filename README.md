@@ -41,7 +41,6 @@ and a user who needs to access the particular resource should have the relevant 
     @http:ServiceConfig {
         basePath:"/hello"
     }
-
     @auth:Config {
         authentication:{enabled:true},
         scope:"xxx"
@@ -52,7 +51,6 @@ and a user who needs to access the particular resource should have the relevant 
             path:"/sayHello"
         }
         @auth:Config {
-            authentication:{enabled:false},
             scope:"scope2"
         }
         echo (endpoint client, http:Request req) {
