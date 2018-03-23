@@ -1,53 +1,43 @@
-import ballerina.net.http;
-import ballerina.auth.authz;
-import ballerina.auth.basic;
+import ballerina/net.http;
+import ballerina/io;
+import ballerina/net.http.endpoints;
+import ballerina/auth;
 
-endpoint<http:Service> backendEp {
-    port:9096,
-    ssl:{
-        keyStoreFile:"${ballerina.home}/bre/security/ballerinaKeystore.p12",
-        keyStorePassword:"ballerina",
-        certPassword:"ballerina"
+endpoint endpoints:ApiEndpoint ep {
+    port:9090,
+    secureSocket:
+    {
+        keyStore:{
+            filePath:"${ballerina.home}/bre/security/ballerinaKeystore.p12",
+            password:"ballerina"
+        },
+        trustStore:{
+             filePath:"${ballerina.home}/bre/security/ballerinaTruststore.p12",
+             password:"ballerina"
+        }
     }
+};
+
+@http:ServiceConfig {
+    basePath:"/hello"
 }
-@http:serviceConfig {
-    basePath:"/helloWorld",
-    endpoints:[backendEp]
+
+@auth:Config {
+    authentication:{enabled:true},
+    scope:"xxx"
 }
-service<http:Service> helloWorld {
-    @http:resourceConfig {
+service<http:Service> echo bind ep {
+    @http:ResourceConfig {
         methods:["GET"],
         path:"/sayHello"
     }
-    resource sayHello (http:ServerConnector conn, http:Request request) {
+    @auth:Config {
+        authentication:{enabled:false},
+        scope:"scope2"
+    }
+    echo (endpoint client, http:Request req) {
         http:Response res = {};
-        AuthStatus authStatus = checkAuth(request, "scope2", "/sayHello");
-        if(authStatus.success) {
-            res.setJsonPayload("Hello, World!!");
-        } else {
-            res = {statusCode:authStatus.statusCode, reasonPhrase:authStatus.message};
-        }
-        _ = conn -> respond(res);
+        res.setStringPayload("Hello, World!!!");
+        _ = client -> respond(res);
     }
-}
-
-function checkAuth (http:Request request, string scopeName, string resourceName) (AuthStatus) {
-    basic:HttpBasicAuthnHandler authnHandler = {};
-    authz:HttpAuthzHandler authzHandler = {};
-    if (!authnHandler.handle(request)) {
-        AuthStatus authnStatus = {success:false, statusCode:401, message:"Unauthenticated"};
-        return authnStatus;
-    } else if (!authzHandler.handle(request, scopeName, resourceName)) {
-        AuthStatus authzStatus = {success:false, statusCode:403, message:"Unauthorized"};
-        return authzStatus;
-    } else {
-        AuthStatus authStatus = {success:true, statusCode:200, message:"Successful"};
-        return authStatus;
-    }
-}
-
-public struct AuthStatus {
-    boolean success;
-    int statusCode;
-    string message;
 }
